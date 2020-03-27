@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+		<title>登陆</title>
+		<link rel="stylesheet" href="https://weui.io/style/weui.css" />
+		<script src="https://cdn.jsdelivr.net/jquery/2.0.0/jquery-2.0.0.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue" ></script>
+		<script src="/js/util.js"></script>
+	</head>
+	<body ontouchstart> 
+		<div class="page" id="app">
+			<div class="page__hd">
+					<h1 id="loginName" class="page__title">{{ userName }}</h1>
+			</div>
+			<div class="page_bd">
+				<div class="weui-cells__group weui-cells__group_form">
+					<div class="weui-cells weui-cells_form">
+						<div class="weui-cell weui-cell_active">
+							<div class="weui-cell__hd">
+								<label class="weui-label">密码:</label>
+							</div>
+							<div class="weui-cell__bd">
+								<input class="weui-input" placeholder="请输入您的密码" value="{{ pwd }}" />
+							</div>		
+						</div>
+					</div>		
+				</div>		
+			</div>
+		</div>
+		<script>
+			$(document).ready(function(){
+				var userName = superMarket.util.getQueryVariable("userName");
+				var app = new Vue({
+					el :"#app",
+					data:{
+						userName:userName,
+						pwd:""	
+					}
+				});
+			});
+		</script>
+	</body>
+</html>
