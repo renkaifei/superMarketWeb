@@ -21,7 +21,7 @@
 								<label class="weui-label">密码:</label>
 							</div>
 							<div class="weui-cell__bd">
-									<input class="weui-input" placeholder="请输入您的密码" v-model="pwd" />
+									<input type="password"  class="weui-input" placeholder="请输入您的密码" v-model="pwd" />
 							</div>		
 						</div>
 						<div class="weui-cell weui-cell_active" v-if="seen">
@@ -58,13 +58,16 @@
 							contentType:"application/x-www-form-urlencoded",
 							dataType:"json",	
 							success:function(data,textStatus,xmlHttp){
-								goSessionId = xmlHttp.getResponseHeader("goSessionId")	
-								sessionStorage.setItem("goSessionId",goSessionId)
-								window.location.href = "/views/goods.html?openId=" + _self.opendId;
+								goSessionId = xmlHttp.getResponseHeader("goSessionId");	
+								sessionStorage.setItem("goSessionId",goSessionId);
+								sessionStorage.setItem("merchantId",data.MerchantId);
+								sessionStorage.setItem("merchanterId",data.MerchanterId);
+								sessionStorage.setItem("merchanterName",data.MerchanterName);
+								window.location.href = "/views/goods.html";
 							},
 							error:function(xmlhttp,status,error){
-								_self.errorMessage = error		
-								_self.seen = true	
+								_self.errorMessage = xmlhttp.responseText;	
+								_self.seen = true
 							}	
 						});
 					}

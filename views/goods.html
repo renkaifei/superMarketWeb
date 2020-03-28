@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0,viewport-fit=cover" >
+		<meta charset="UTF-8">
+		<title>宝贝列表</title>
+		<link href="https://res.wx.qq.com/open/libs/weui/2.3.0/weui.css" rel="stylesheet">
+		<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+		<script src="https://cdn.jsdelivr.net/jquery/2.0.0/jquery-2.0.0.min.js" ></script>
+	</head>
+	<body ontouchstart>
+		<div class="page" id="merchantInfo">
+			<div class="page-hd">
+				<h1 class="page-hd__title">{{merchantName}}</h1>
+				<h3>{{merchantAddress}}</h3>
+			</div>	
+			<div class="page_bd">
+				
+			</div>
+		</div>		
+	</body>
+
+	<script>
+		var merchantApp = new Vue({
+			el:"#merchantInfo"
+			data:{
+				merchantName:"",
+				merchantAddress:""	
+			}
+		});
+		
+		$(document).ready(function(){
+			
+		});
+
+		
+	</script>		
+</html>		
