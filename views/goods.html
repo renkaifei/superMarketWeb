@@ -4,35 +4,111 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0,viewport-fit=cover" >
 		<meta charset="UTF-8">
 		<title>宝贝列表</title>
-		<link href="https://res.wx.qq.com/open/libs/weui/2.3.0/weui.css" rel="stylesheet">
-		<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+		<link href="https://cdn.staticfile.org/weui/2.3.0/style/weui.min.css" rel="stylesheet">
+		<link href="/css/weuix.css" rel="stylesheet">
 		<script src="https://cdn.jsdelivr.net/jquery/2.0.0/jquery-2.0.0.min.js" ></script>
+		<script src="/js/util.js" ></script>
+		<script src="/js/components.js"></script>
+		<script src="/js/merchant.js"></script>
+		<script src="/js/goods.js"></script>
 	</head>
 	<body ontouchstart>
-		<div class="page" id="merchantInfo">
-			<div class="page-hd">
-				<h1 class="page-hd__title">{{merchantName}}</h1>
-				<h3>{{merchantAddress}}</h3>
-			</div>	
-			<div class="page_bd">
-				
+		<div class="weui-tab">
+			<div class="weui-tab__panel">
+				<div id="container"></div>
 			</div>
+			<div class="weui-tabbar">
+				<div class="weui-tabbar__item weui-bar__item_on">
+					<div class="weui-tabbar__label" id="btnGoodsShelves">货架</div>
+				</div>
+				<div class="weui-tabbar__item">
+					<div class="weui-tabbar__label" id="btnShowMerchantInfo">商户信息</div>
+				</div>		
+			</div>		
+		</div>	
+			
+
+		<div id="message" style="display:none">
+			<div class="weui-mask_transparent"></div>
+			<div class="weui-toast">
+				<p class="weui-toast__content" id="message"></p>
+			</div>		
 		</div>		
+				
 	</body>
 
 	<script>
-		var merchantApp = new Vue({
-			el:"#merchantInfo"
-			data:{
-				merchantName:"",
-				merchantAddress:""	
-			}
-		});
-		
 		$(document).ready(function(){
-			
+			$("#btnShowMerchantInfo").click(function(){
+				$(this).parent().addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");
+				showMerchantInfo();	
+			});
+			$("#btnGoodsShelves").click(function(){
+				$(this).parent().addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");
+				showGoodsList();	
+			})	
 		});
 
+		function refreshContainer(elem){
+			var container = document.getElementById("container");
+			container.innerHTML = "";	
+			container.appendChild(elem);
+		}
+
+		function showGoodsList(){
+			var merchantId = sessionStorage.getItem("merchantId");	
+			var _goodses = new goodses();
+			_goodses.selectInMarchant(merchantId,function(){
+				var cells = superMarket.components.weui_cells();
+				var count = this.length;
+				for(var i =0;i<count;i++){
+					var cell = superMarket.components.weui_cell();
+					cells.appendChild(cell);
+					
+					var cell_hd = superMarket.components.weui_cell__hd();
+					$(cell_hd).text(this[i].goodsName);
+					cell.appendChild(cell_hd);
+					var cell_bd = superMarket.components.weui_cell__bd();
+					$(cell_bd).text(this[i].goodsCode);	
+					cell.appendChild(cell_bd);
+				}
+				refreshContainer(cells);	
+			});	
+		}
+
+		function initGoodsListUI(values){
+			var goodslist = document.createElement("div");
+			$(goodslist).addClass("weui-cells");
+			for(var i =0;i<values.length;i++){
+				var cell = document.createElement("div");
+				$(cell).addClass("weui-cell");
+				var cell_hd = document.createElement("div");
+				$(cell_hd).addClass("weui-cell__hd");
+				cell_hd.text = values[i].goodsName	
+			}	
+		}		
+
+
+		function showMerchantInfo(){
+			_merchant = new merchant();
+			var merchantId = sessionStorage.getItem("merchantId");	
+			_merchant.getOne(merchantId,function(){
+				var panel = document.createElement("div");
+				$(panel).addClass("weui-panel");
+				var panel_hd = document.createElement("div");
+				$(panel_hd).addClass("weui-panel__hd");
+				panel.appendChild(panel_hd);
+				h4_merchantName = document.createElement("h4");
+			    h4_merchantName.innerText = this.merchantName;
+				panel_hd.appendChild(h4_merchantName);	
+				h4_merchantAddress = document.createElement("h4");	
+				h4_merchantAddress.innerText = this.merchantAddress;
+				panel_hd.appendChild(h4_merchantAddress);
+				refreshContainer(panel);	
+			});
+		}
+		
+		
 		
 	</script>		
 </html>		
