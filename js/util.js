@@ -31,5 +31,31 @@ var superMarket = (function( superMarket,win,$){
 			$(toast).remove();
 		},3000)
 	};
+	util.queryConfig =function(callback){
+		var url = win.location.href.split('#')[0];
+		$.ajax({
+			url:"/wx/QueryConfig",
+			type:"POST",
+			contentType:"application/x-www-form-urlencoded",
+			data:{ url:url},
+			dataType:"json",	
+			success:function(data){
+				console.log(data);
+				callback(data);	
+			}	
+		});
+	};
+    util.scanBarCode = function(option){
+		wx.scanQRCode({
+			needResult:option.needResult,
+			scanType:option.scanType,
+			success:function(res){
+				var result = res.resultStr;
+				option.callback.call(null,result);	
+			}	
+		});
+	}
+		
+		
 	return superMarket;	
 })(superMarket || {}, window,jQuery)
