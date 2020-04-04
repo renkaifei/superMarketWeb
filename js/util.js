@@ -54,8 +54,13 @@ var superMarket = (function( superMarket,win,$){
 				option.callback.call(null,result);	
 			}	
 		});
-	}
+	};
 		
-		
+	util.initSession = function(){
+		goSessionId = util.getQueryVariable("goSessionId");
+		if(goSessionId != ""){
+			sessionStorage.setItem("goSessionId",goSessionId);
+		}	
+	};	
 	return superMarket;	
 })(superMarket || {}, window,jQuery)
