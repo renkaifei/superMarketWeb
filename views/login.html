@@ -4,75 +4,60 @@
 		<meta http-equiv="content-type" content="text/html;charset=utf8">
 		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
 		<title>登陆</title>
-		<link href="https://res.wx.qq.com/open/libs/weui/2.3.0/weui.css" rel="stylesheet">
+		<link href="https://res.wx.qq.com/open/libs/weui/2.3.0/weui.css" rel="stylesheet" >
+		<link href="/css/weuix.css" rel="stylesheet" />
 		<script src="https://cdn.jsdelivr.net/jquery/2.0.0/jquery-2.0.0.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/vue" ></script>
 		<script src="/js/util.js"></script>
 	</head>
 	<body ontouchstart> 
-		<div class="page" id="app">
-			<div class="page__hd">
-			</div>
-			<div class="page_bd">
-				<div class="weui-cells__group weui-cells__group_form">
-					<div class="weui-cells weui-cells_form">
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">密码:</label>
-							</div>
-							<div class="weui-cell__bd">
-									<input type="password"  class="weui-input" placeholder="请输入您的密码" v-model="pwd" />
-							</div>		
-						</div>
-						<div class="weui-cell weui-cell_active" v-if="seen">
-							<div class="weui-cell__bd">
-									<h1>{{ errorMessage }}</h1>
-							</div>		
-						</div>		
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__bd">
-								<button class="weui-btn weui-btn_primary" v-on:click="login">登陆</button>
+		<div class="container">
+			<div class="weui-form__control-area">
+				<div class="weui-form">
+					<div class="weui-cells__group weui-cells__group_form">
+						<div class="weui-cells weui-cell_form">
+							<div class="weui-cell weui-cell_active">
+								<div class="weui-cell__hd">
+									<label class="weui-label">密码</label>
+								</div>
+								<div class="weui-cell__bd">
+									<input type="password" class="weui-input" placeholder="请输入您的密码"  id="pwd" />
+								</div>		
 							</div>		
 						</div>		
 					</div>		
-				</div>		
+				</div>
+			</div>	
+			<div class="weui-form__tips-area">
+				<p class="weui-form__tips" id="message"></p>
 			</div>
-		</div>
+			<div class="weui-form__opr-area">
+				<button class="weui-btn weui-btn_primary" id="btnLogin">登录</button>
+			</div>		
 		<script>
-			userName = superMarket.util.getQueryVariable("fromUserName")
-			var app = new Vue({
-				el :"#app",
-				data:{
-					openId:userName,	
-					pwd:"",
-					errorMessage:"",
-					seen:false	
-				},
-				methods:{
-					login:function(){
-						var _self = this;
-						$.ajax({
-							url:"/login",
-							type:"POST",	
-							data:"openId=" + _self.openId + "&pwd=" + _self.pwd,
-							contentType:"application/x-www-form-urlencoded",
-							dataType:"json",	
-							success:function(data,textStatus,xmlHttp){
-								goSessionId = xmlHttp.getResponseHeader("goSessionId");	
-								sessionStorage.setItem("goSessionId",goSessionId);
-								sessionStorage.setItem("merchantId",data.MerchantId);
-								sessionStorage.setItem("merchanterId",data.MerchanterId);
-								sessionStorage.setItem("merchanterName",data.MerchanterName);
-								window.location.href = "/views/goods.html";
-							},
-							error:function(xmlhttp,status,error){
-								_self.errorMessage = xmlhttp.responseText;	
-								_self.seen = true
-							}	
-						});
-					}
-				}	
-			});
+			$(document).ready(function(){
+				$("#btnLogin").click(function(){
+					userName = superMarket.util.getQueryVariable("fromUserName");
+					pwd = $("#pwd").val();
+					$.ajax({
+						url:"/login",
+						type:"POST",	
+						data:"openId=" + userName + "&pwd=" + pwd,
+						contentType:"application/x-www-form-urlencoded",
+						dataType:"json",	
+						success:function(data,textStatus,xmlHttp){
+							goSessionId = xmlHttp.getResponseHeader("goSessionId");	
+							sessionStorage.setItem("goSessionId",goSessionId);
+							sessionStorage.setItem("merchantId",data.MerchantId);
+							sessionStorage.setItem("merchanterId",data.MerchanterId);
+							sessionStorage.setItem("merchanterName",data.MerchanterName);
+							window.location.href = "/views/goods.html";
+						},
+						error:function(xmlhttp,status,error){
+							$("#message") = xmlhttp.responseText;	
+						}	
+					});
+				});	
+			});	
 		</script>
 	</body>
 </html>

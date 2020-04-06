@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" >
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0,viewport-fit=cover" >
+		<title>商品列表</title>		
+		<link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/2.3.0/weui.min.css" />
+		<link rel="stylesheet" href="/css/weuix.css" />
+		<script src="https://cdn.jsdelivr.net/jquery/2.0.0/jquery-2.0.0.min.js"></script>
+		<script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+		<script src="https://res.wx.qq.com/open/libs/weuijs/1.2.1/weui.min.js"></script>
+		
+		<script src="/js/util.js"></script>
+		<script src="/js/components.js"></script>
+		<script src="/js/merchantGoods.js"></script>
+		<script src="/js/goods.js"></script>
+	</head>
+	<body ontouchstart>
+		<div class="weui-tab">
+			<div id="container" class="weui-tab__panel">
+			
+			</div>
+			<div class="weui-tabbar">
+				<div class="weui-tabbar__item weui-bar__item-on" id="goodsShelves">
+					<p class="weui-tabbar__label">货架</p>
+				</div>
+				<div class="weui-tabbar__item" id="uploadGoods">
+					<p class="weui-tabbar__label">上货</p>
+				</div>		
+			</div>		
+		</div>
+		<script type="text/html" id="tpl_merchantGoods">
+			<div class="weui-form">
+				<div class="weui-form__text-area">
+					<h2>商品信息</h2>
+				</div>
+				<div class="weui-cells__group weui-cells__group_form">
+					<div class="weui-cells weui-cells_form">
+						<div class="weui-cell weui-cell_active">
+							<div class="weui-cell__hd">
+								<label class="weui-label">商品</label>
+							</div>
+							<div class="weui-cell__bd">
+								<input type="text" id="goodsName" class="weui-input" readonly placeholder="点击扫描商品条码" />
+								<input type="hidden" id="goodsId" />
+								<input type="hidden" id="merchantGoodsId" />
+							</div>
+						</div>
+						<div class="weui-cell weui-cell_active">
+							<div class="weui-cell__hd">
+								<label class="weui-label">价格</label>
+							</div>
+							<div class="weui-cell__bd">
+								<input type="text" class="weui-input" id="price" placeholder="请输入商品价格" />
+							</div>
+						</div>
+						<div class="weui-cell weui-cell_active">
+							<div class="weui-cell__hd">
+								<label class="weui-label">折扣</label>
+							</div>
+							<div class="weui-cell__bd">
+								<input type="text" class="weui-input" id="discount" placeholder="请输入商品折扣" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="weui-form__tips-area">
+					<p class="weui-form_tips" id="message"></p>
+				</div>
+				<div class="weui-form__opr-area">
+					<button class="weui-btn weui-btn_primary" id="btnUpload">提交</button>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/html" id="tpl_searchBox">
+			<div id="searchBar" class="weui-search-bar">
+				<form class="weui-search-bar__form">
+					<i class="weui-icon-search"></i>
+					<input type="search" class="weui-search-bar__input" id="searchInput" placeholder="搜索" />
+				</form>
+				<a href="javascript:void(0)" class="weui-search-bar__cancel-btn" id="btnSearchCancel">搜索</a>
+			</div>
+		</script>
+
+		<script>
+			var pageIndex = 1,pageSize = 50;	
+			$(document).ready(function(){
+				superMarket.util.initSession();	
+				initPage();	
+				getWxConfig();
+				showShelves();	
+				$("#goodsShelves").click(function(e){
+					showShelves();
+				});	
+				$("#uploadGoods").click(function(){
+					showMerchantGoods();
+				});
+			});
+
+			function getWxConfig(){
+				superMarket.util.queryConfig(function(data){
+					wx.config({
+						appId:data.appId,
+						timestamp:data.timestamp,
+						nonceStr:data.nonceStr,
+						signature:data.signature,
+						jsApiList:["scanQRCode"]	
+					});	
+				});	
+			}
+
+			function initPage(){
+				merchantId = superMarket.util.getQueryVariable("merchantId");
+				if (merchantId != "") {
+					sessionStorage.setItem("merchantId",merchantId);
+				}	
+			}
+
+			function showShelves(){
+				$("#goodsShelves").addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
+				var content = $("#searchInput").val();	
+				var _merchantGoodses = new merchantGoodses();
+				var merchantId = sessionStorage.getItem("merchantId")	
+				_merchantGoodses.selectByMerchantId({
+						content:content,
+						merchantId:merchantId,
+						pageIndex:pageIndex,
+						pageSize:pageSize
+					},function(data){
+					var container = document.createElement("div");
+					var length = data.values.length;	
+					for(var i =0;i<length;i++){
+						var div = superMarket.components.div({});	
+						var pGoods = superMarket.components.p({
+							text:data.values[i].goodsName
+						});
+						div.appendChild(pGoods);	
+						var pPriceAndDiscount = superMarket.components.p({
+							text:"价格:" + data.values[i].price + ",折扣:" + data.values[i].discount
+						});
+						$(pPriceAndDiscount).css("margin-left","20px");	
+						div.appendChild(pPriceAndDiscount);	
+						var item = superMarket.components.formItem({
+							body:div	
+						});
+						container.appendChild(item);	
+					}
+					var btnOprArea = superMarket.components.div({
+						
+					});		
+					var btnPrev = superMarket.components.button({
+						className:"weui-btn weui-btn_primary",
+						text:"上一页",
+						click:function(){
+							if(pageIndex > 1) pageIndex = pageIndex -1;	
+							showShelves();	
+						}	
+					});
+					btnOprArea.appendChild(btnPrev);		
+					var btnNext = superMarket.components.button({
+						className:"weui-btn weui-btn_primary",
+						text:"下一页",
+						click:function(){
+							if(pageIndex * pageSize > data.totalCount) return;
+							pageIndex = pageIndex +1;
+							showShelves();	
+						}	
+					});
+					btnOprArea.appendChild(btnNext);		
+				    var oprArea = superMarket.components.formItem({
+						body:btnOprArea	
+					});
+					container.appendChild(oprArea);		
+					$("#container").html("");	
+					$("#container").append(container);
+				},function(xmlhttp){
+					
+				})	
+			}
+				
+			function showMerchantGoods(data){
+				$("#container").html($("#tpl_merchantGoods").html());
+				$("#goodsName").click(function(){
+					wx.scanQRCode({
+						needResult:1,
+						scanType:["barCode"],
+						success:function(res){
+							var result = res.resultStr;
+							result = result.split(",")[1];
+							queryGoods(result);	
+						}	
+					});
+				});
+				$("#btnUpload").click(function(){
+					var goodsId =  $("#goodsId").val();
+					if(goodsId == "") $("#message").text("商品名称不能为空，请先扫描商品");	
+					var price = $("#price").val();
+					if(!$.isNumeric(price)) $("#message").text("商品价格应该为数字");
+					var discount = $("#discount").val();
+					if(!$.isNumeric(discount)) $("#message").text("商品折扣应该为数字");
+					var _merchantGoods = new merchantGoods();
+					_merchantGoods.merchantGoodsId = $("#merchantGoodsId").val();	
+					_merchantGoods.goodsId = goodsId;
+					_merchantGoods.merchantId = sessionStorage.getItem("merchantId");
+					_merchantGoods.price = price;
+					_merchantGoods.discount = discount;
+					if(_merchantGoods.merchantGoodsId == "" || _merchantGoods.merchantGoodsId == "0"){
+						_merchantGoods.create(function(data){
+							$("#goodsId").val("");
+							$("#goodsName").val("");
+							$("#price").val("");
+							$("#discount").val("");	
+							$("#message").text("新增成功");	
+						},function(xmlhttp){
+							$("#message").text(xmlhttp.responseText);
+						});
+					}else{
+						_merchantGoods.update(function(data){
+							$("#goodsId").val("");
+							$("#goodsName").val("");
+							$("#price").val("");
+							$("#discount").val("");
+							$("#message").text("修改成功");	
+						},function(xmlhttp){
+							$("#message").text(xmlhttp.responseText);
+						});	
+					}	
+				});	
+			}
+
+			function queryGoods(goodsBarCode){
+				var _goods = new goods();
+				_goods.selectByBarCode(goodsBarCode,function(data){
+					$("#goodsName").val(data.goodsName);
+					$("#goodsId").val(data.goodsId);	
+					queryMerchantGoods(data.goodsId);	
+				},function(data){
+					$("#message").text(data.responseText);
+				});
+			}
+
+			function queryMerchantGoods(goodsId) {
+				var _merchantGoods = new merchantGoods();
+				_merchantGoods.goodsId = goodsId;
+				_merchantGoods.merchantId = sessionStorage.getItem("merchantId");
+				_merchantGoods.selectByMerchantIdAndGoodsId(function(data){
+					$("#merchantGoodsId").val(data.merchantGoodsId);
+					$("#price").val(data.price);
+					$("#discount").val(data.discount);	
+				},function(xmlhttp){
+					$("#message").text(xmlhttp.responseText);
+				});	
+			}
+				
+		</script>		
+	</body>		
+</html>		

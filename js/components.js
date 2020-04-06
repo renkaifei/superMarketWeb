@@ -53,6 +53,13 @@ var superMarket = (function(win,$,superMarket){
 		return a	
 	};
 
+	components.p = function(option){
+		var p = document.createElement("p");
+		if(option.className) $(p).addClass(option.className);
+		if(option.text) $(p).text(option.text);
+		return p;	
+	}	
+
 	components.form = function(option){
 		var form = document.createElement("form");
 		if(option.className) $(form).addClass(option.className);

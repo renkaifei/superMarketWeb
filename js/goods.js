@@ -8,6 +8,7 @@ function goods(){
 	this.company = "";	
 };
 
+
 goods.prototype.add = function(success,error){
 	var _self = this;	
 	$.ajax({
@@ -83,6 +84,32 @@ goods.prototype.update = function(success,error){
 		success:success,
 		error:error	
 	});	
+}
+
+goods.prototype.selectByBarCode = function(barCode,success,error){
+	var _self = this;
+	$.ajax({
+		url:"/goods/selectByBarCode",
+		type:"post",
+		contentType:"application/x-www-form-urlencoded",
+		dataType:"json",
+		beforeSend:function(xmlhttp){
+			goSessionId = sessionStorage.getItem("goSessionId");
+			xmlhttp.setRequestHeader("goSessionId",goSessionId);	
+		},
+		data:{ barCode:barCode },
+		success:function(data){
+			_self.goodsId = data.GoodsId;
+			_self.goodsName = data.GoodsName;
+			_self.goodsBarCode = data.GoodsBarCode;
+			_self.goodsSpecification = data.GoodsSpecification;
+			_self.goodsDescription = data.GoodsDescription;
+			_self.goodsTradeMark = data.GoodsTradeMark;
+			_self.company = data.Company;
+			success(_self);	
+		},
+		error:error	
+	});
 }
 
 function goodses(){

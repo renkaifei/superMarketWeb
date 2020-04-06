@@ -40,7 +40,6 @@ var superMarket = (function( superMarket,win,$){
 			data:{ url:url},
 			dataType:"json",	
 			success:function(data){
-				console.log(data);
 				callback(data);	
 			}	
 		});
