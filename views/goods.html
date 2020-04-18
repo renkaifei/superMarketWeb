@@ -30,95 +30,48 @@
 			</div>		
 		</div>	
 
-		<script type="text/html" id="tpl_goods">
-			<div class="weui-form">
-				<div class="weui-form__text-area">
-					<h2 id="title" class="weui-form__title">新增商品</h2>
-				</div>
-				<div class="weui-cells__group weui-cells__group_form">
-					<div class="weui-cells weui-cells_form">
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">商品条码</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" placeholder="请输入商品条码" id="goodsBarCode" />
-								<input type="hidden" id="goodsId" />
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">商品名称</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="goodsName" />
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">规格型号</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="goodsSpecification"/>
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">描述</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="goodsDescription" />
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">商标</label>
-							</div>	
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="goodsTradeMark" />
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell_hd">
-								<label class="weui-label">公司</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="company" />	
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="weui-form__tips-area">
-					<p class="weui-form_tips" id="message"></p>
-				</div>
-				<div class="weui-form__opr-area">
-					<button id="btnSubmit" class="weui-btn weui-btn_primary">提交</button>
-				</div>
-			</div>
-		</script>
-		
-		<script type="text/html" id="tpl_searchBar">
-			<div class="weui-search-bar weui-search-bar_focusing">
-				<form class="weui-search-bar__form">
-					<div class="weui-search-bar__box">
-						<i class="weui-icon-search"></i>
-						<input id="searchInput" type="search" class="weui-search-bar__input" placeholder="搜索" />
-					</div>
-				</form>
-				<a id="btnSearch" class="weui-search-bar__cancel-btn">搜索</a>
-			</div>
-		</script>		
-				
 	</body>
 
 	<script>
-		var pageIndex =1 ,pageSize = 50;
+		var _goods,_goodses;
 
 		$(document).ready(function(){
 			getWxConfig();
-
-			showGoodsList();	
+			pageInit();
 			$("#btnGoodsShelves").click(function(){
+				$("#btnGoodsShelves").parent().addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
+				$("#container").html("");	
+				var searchBar = superMarket.components.searchBar({
+					search:function(content){
+						_goodses.content=content;
+						_goodses.pageIndex = 1;
+						_goodses.pageSize = 50;
+						showGoodsList();	
+					}
+				});
+				$("#container").append(searchBar);
+				var cells = superMarket.components.weuiCells({
+					id:"goodsShelves"
+				});
+				$("#container").append(cells);
+				$("#goodsShelves").on("click","div.weui-cell",function(){
+					var data = $(this).data("data");
+					$("btnGoodsDetail").addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");
+					_goods = data;	
+					showGoodsDetail(data);	
+				});
+				$("#container").scroll(function(e){
+					var scrollTop =  this.scrollTop;
+					var height =  this.clientHeight;
+					var scrollHeight =  this.scrollHeight;
+					if(scrollTop + height == scrollHeight){
+						if(_goodses.pageIndex * _goodses.pageSize < _goodses.totalCount) {
+							_goodses.pageIndex = _goodses.pageIndex + 1;
+							showGoodsList();	
+						}
+					}
+				});	
+				_goodses.pageIndex = 1;	
 				showGoodsList();	
 			});
 			$("#btnGoodsDetail").click(function(){
@@ -126,6 +79,11 @@
 				showGoodsDetail(goodsDetail);	
 			});	
 		});
+
+		function pageInit(){
+			_goods = new goods();
+			_goodses = new goodses();
+		}
 
 		function getWxConfig(){
 			superMarket.util.initSession();	
@@ -142,68 +100,19 @@
 		}
 
 		function showGoodsList(){
-			var _goodses = new goodses();
-			var content = $("#searchInput").val();
-			_goodses.selectOnePage(content,pageIndex,pageSize,function(){
+			_goodses.selectOnePage(function(){
 				var _self = this;
-				var container = document.createElement("div");
-				$(container).html($("#tpl_searchBar").html());	
-
-				var cells = superMarket.components.div({
-					className:"weui-cells"
-				});
-				container.appendChild(cells);	
-				var count = _self.values.length;
-				for(var i =0;i<count;i++){
-					var label = superMarket.components.label({ 
-						text:_self.values[i].goodsName	
-					});
-					var cell = superMarket.components.formItem({
-						body:label
-					});
-					$(cell).attr("goodsId",_self.values[i].goodsId);	
-					cells.appendChild(cell)	
+				var cellsOption = [];
+				var length = _self.values.length;
+				var fragment = document.createDocumentFragment();	
+				for(var i =0;i<length;i++){
+					fragment.appendChild(superMarket.components.weuiCell({ 
+						body:{ type:"p",text:_self.values[i].goodsName },
+						data:_self.values[i]	
+					}));
 				}
-				
-				var spArea = superMarket.components.div({
-				});
-				$(spArea).css({ "text-align":"center","margin-top":"15px" });	
-				container.appendChild(spArea);
-				var btnPrev = superMarket.components.button({
-					className:"weui-btn weui-btn_mini weui-btn_primary",
-					text:"上一页",
-					click:function(){
-						if(pageIndex > 1)pageIndex = pageIndex - 1;
-						showGoodsList();	
-					}	
-				});
-				$(btnPrev).css("margin-right","15px");	
-				spArea.appendChild(btnPrev);
-				var btnNext = superMarket.components.button({
-					className:"weui-btn weui-btn_mini weui-btn_primary",
-					text:"下一页",
-					click:function(){
-						if (pageIndex * pageSize < _self.totalCount){
-							pageIndex = pageIndex + 1;
-							showGoodsList();	
-						}
-					}	
-				});
-				spArea.appendChild(btnNext);	
-				$(".weui-cell",cells).click(function(){
-					var goodsId =  $(this).attr("goodsId");
-					var item = new goods();
-					item.goodsId = goodsId;
-					item.selectById(function(data){
-						showGoodsDetail(data);
-					},function(xmlhttp){
-						alert(xmlhttp.responseText);
-					});	
-				});
-				$("#container").html("");
-				$("#container").append(container);
-				$("#btnGoodsShelves").parent().addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
-				$("#searchInput").val(content);
+				$("#goodsShelves").append(fragment);	
+				$("#searchInput").val(_self.content);
 				$("#btnSearch").click(function(){
 					pageIndex = 1;
 					pageSize = 50;	
@@ -212,58 +121,152 @@
 			});	
 		}
 
-		function showGoodsDetail(data){
-			$("#btnGoodsDetail").parent().addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
-			$("#container").html($("#tpl_goods").html());
-			if(data.goodsId != "") $("#title").text("修改商品");	
-			$("#goodsId").val(data.goodsId);
-			$("#goodsBarCode").val(data.goodsBarCode);
-			$("#goodsName").val(data.goodsName);
-			$("#goodsSpecification").val(data.goodsSpecification);
-			$("#goodsDescription").val(data.goodsDescription);
-			$("#goodsTradeMark").val(data.goodsTradeMark);
-			$("#company").val(data.company);
-			$("#goodsBarCode").click(function(){
-				wx.scanQRCode({
-					needResult:1,
-					scanType:["barCode"],
-					success:function(res){
-						var result = res.resultStr;
-						result = result.split(",")[1];
-						$("#goodsBarCode").val(result);
+	function showGoodsDetail(detail){
+		var goodsForm = superMarket.components.weuiForm({
+			textArea:{
+				title:"新建商品",
+			},
+			controlArea:{
+				cells:[
+					{
+						head:{ type:"label",className:"weui-label",text:"商品条码" },
+						body:{ type:"text",
+								id:"goodsBarCode",
+								className:"weui-input",
+								value:detail.goodsBarCode,
+								click:function(){
+									wx.scanQRCode({
+										needResult:1,
+										scanType:["barCode"],
+										success:function(res){
+											var result = res.resultStr;
+											result = result.split(',')[1];	
+											$("#goodsBarCode").val(result);
+											_goods.goodsBarCode = result;	
+										}	
+									});
+								}
+						}	
+					},
+					{
+						head:{ type:"label",className:"weui-label",text:"商品名称" },
+						body:{ type:"text",
+								id:"goodsName",
+								className:"weui-input", 
+								value:detail.goodsName,
+								change:function(){
+									_goods.goodsName = $(this).val();
+								}
+						}	
+					},
+					{
+						head:{ type:"label",className:"weui-label",text:"规格型号" },
+						body:{ type:"text",
+								id:"goodsSpecification",
+								className:"weui-input",
+								value:detail.goodsSpecification,
+								change:function(){
+									_goods.goodsSpecification = $(this).val();
+								}
+						}
+					},
+					{
+						head:{ type:"label",className:"weui-label",text:"描述" },
+						body:{ type:"text",
+								id:"goodsDescription",
+								className:"weui-input",
+								value:detail.goodsDescription,
+								change:function(){
+									_goods.goodsDescription = $(this).val();
+								}
+						}	
+					},
+					{
+						head:{ type:"label",className:"weui-label",text:"商标"  },
+						body:{ type:"text",
+								id:"goodsTradeMark",
+								className:"weui-input",
+								value:detail.goodsTradeMark,
+								change:function(){
+									_goods.goodsTradeMark = $(this).val();
+								}
+						}	
+					},
+					{
+						head:{ type:"label",className:"weui-label",text:"厂家"  },
+						body:{ type:"text",
+								id:"company",	
+								className:"weui-input",
+								value:detail.company,
+								change:function(){
+									_goods.company = $(this).val();
+								}
+						}	
+					},
+					{
+						head:{ type:"label",className:"weui-label",text:"图片" },
+						body:{ type:"text",
+								id:"goodsPicture",
+								className:"weui-input",
+								value:detail.goodsPicture,
+								change:function(){
+									_goods.goodsPicture = $(this).val();
+								}
+						}	
 					}	
-				});
-			});	
-			$("#btnSubmit").click(function(){
-				var item = new goods();
-				item.goodsId = $("#goodsId").val();
-				item.goodsBarCode = $("#goodsBarCode").val();
-				item.goodsName = $("#goodsName").val();
-				item.goodsSpecification = $("#goodsSpecification").val();
-				item.goodsDescription = $("#goodsDescription").val();
-				item.goodsTradeMark = $("#goodsTradeMark").val();
-				item.company = $("#company").val();
-				if(item.goodsId ==""){
-					item.add(function(data){
-						$("#goodsId").val("");
-						$("#goodsBarCode").val("");
-						$("#goodsName").val("");
-						$("#goodsSpecification").val("");
-						$("#goodsDescription").val("");
-						$("#goodsTradeMark").val("");
-						$("#company").val("");	
-						$("#message").text("保存成功");
-					},function(xmlhttp){
-						$("#message").text(xmlhttp.responseText);
-					});
-				}else{
-					item.update(function(data){
-						showGoodsList();		
-					},function(xmlhttp){
-						$("#message").text(xmlhttp.responseText);
-					});
-				};	
-			});	
-		}
+				]
+			},
+			tipsArea:{
+				tips:""
+			},	
+			oprArea:{
+				btns:[
+					{ type:"button",
+						text:"提交",
+						className:"weui-btn weui-btn_primary",
+						click:function(){
+							if(_goods.goodsBarCode == "") {
+								superMarket.util.showErrorMessage("商品条码不能为空");
+								return;	
+							}
+							if(_goods.goodsName == ""){
+								superMarket.util.showErrorMessage("商品名称不能为空");
+								return;	
+							}
+							if(_goods.goodsSpecification == ""){
+								superMarket.util.showErrorMessage("商品规格不能为空");
+								return;	
+							}
+							if(_goods.goodsTradeMark == ""){
+								superMarket.util.showErrorMessage("商品商标不能为空");
+								return;	
+							}
+							if(_goods.company == ""){
+								superMarket.util.showErrorMessage("厂家不能为空");
+								return;
+							}
+							if(_goods.goodsId == ""){
+								_goods.add(function(data){
+									$("#goodsBarCode,#goodsName,#goodsSpecification,#goodsDescription,#goodsTradeMark,#company").val("");
+									superMarket.showErrorMessage("保存成功");	
+								},function(xmlhttp){
+									superMarket.util.showErrorMessage(xmlhttp.responseText);
+								});	
+							}else{
+								_goods.update(function(data){
+									superMarket.util.showErrorMessage("修改成功");
+								},function(xmlhttp){
+									superMarket.util.showErrorMessage(xmlhttp.responseText);
+								})
+							}	
+						}
+					}
+				]
+			}	
+		});
+		$("#container").html("");
+		$("#container").append(goodsForm);
+		$("#btnGoodsDetail").parent().addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
+	}	
 	</script>		
 </html>		

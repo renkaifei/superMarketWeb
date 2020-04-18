@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" >
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0,viewport-fit=cover" >
+		<title>高校</title>
+		<link href="https://res.wx.qq.com/open/libs/weui/2.3.0/weui.min.css"  />
+		<script src="http://cdn.jsdelivr.net/jquery/2.0.0/jquery-2.0.0.min.js"></script>
+		<script src="/js/util.js"></script>
+	</head>
+	<body ontouchstart>
+		<div class="weui-form">
+			<div class="weui-form__text-area">
+				<h2 class="weui-form__title">高校信息填写</h2>
+			</div>
+			<div class="weui-form__control-area">
+				<div class="weui-cells__group weui-cells__group_form">
+					<div class="weui-cells weui-cells_form">
+						<div class="weui-cell weui-cell_active">
+							<div class="weui-cell__hd">
+								<label>高校名称</label>
+							</div>
+							<div class="weui-cell__bd">
+							</div>		
+						</div>			
+					</div>		
+				</div>		
+			</div>		
+		</div>
+		<script>
+			$(document).ready(function(){
+				
+			});
+
+			function showUniversity(data){
+				var labelUniversityName = superMarket.componets.label({
+					className:"weui-label",
+					text:"高校名称"	
+				}); 
+				var inputUniversityName = superMarket.componets.text({
+					className:"weui-input",
+					text:data.universityName,
+				});
+				var formItemUniversityName = superMarket.components.formItem({
+					
+				});	
+				var labelUniversityCode = superMarket.components.label({
+					className:"weui-label",
+					text:"高校编号"	
+				});
+				var inputUniversityCode = superMarket.components.text({
+					className:"weui-input",
+					text:data.universityCode	
+				});	
+				var labelUniversityAddress = superMarket.components.label({
+					className:"weui-label",
+					text:"高校地址",	
+				});
+				var inputUniversityAddress = superMarket.components.text({
+					className:"weui-input",
+					text:data.universityAddress	
+				});	
+				  	
+			}
+		</script>		
+	</body>
+</html>

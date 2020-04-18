@@ -29,73 +29,33 @@
 				</div>		
 			</div>		
 		</div>
-		<script type="text/html" id="tpl_merchantGoods">
-			<div class="weui-form">
-				<div class="weui-form__text-area">
-					<h2>商品信息</h2>
-				</div>
-				<div class="weui-cells__group weui-cells__group_form">
-					<div class="weui-cells weui-cells_form">
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">商品</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" id="goodsName" class="weui-input" readonly placeholder="点击扫描商品条码" />
-								<input type="hidden" id="goodsId" />
-								<input type="hidden" id="merchantGoodsId" />
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">价格</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="price" placeholder="请输入商品价格" />
-							</div>
-						</div>
-						<div class="weui-cell weui-cell_active">
-							<div class="weui-cell__hd">
-								<label class="weui-label">折扣</label>
-							</div>
-							<div class="weui-cell__bd">
-								<input type="text" class="weui-input" id="discount" placeholder="请输入商品折扣" />
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="weui-form__tips-area">
-					<p class="weui-form_tips" id="message"></p>
-				</div>
-				<div class="weui-form__opr-area">
-					<button class="weui-btn weui-btn_primary" id="btnUpload">提交</button>
-				</div>
-			</div>
-		</script>
-
-		<script type="text/html" id="tpl_searchBox">
-			<div id="searchBar" class="weui-search-bar">
-				<form class="weui-search-bar__form">
-					<i class="weui-icon-search"></i>
-					<input type="search" class="weui-search-bar__input" id="searchInput" placeholder="搜索" />
-				</form>
-				<a href="javascript:void(0)" class="weui-search-bar__cancel-btn" id="btnSearchCancel">搜索</a>
-			</div>
-		</script>
 
 		<script>
-			var pageIndex = 1,pageSize = 50;	
+			var _merchantGoods,_merchantGoodses;	
 			$(document).ready(function(){
-				superMarket.util.initSession();	
 				initPage();	
-				getWxConfig();
-				showShelves();	
 				$("#goodsShelves").click(function(e){
+					$(this).addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");
+					$("#container").html("");	
+					$("#container").append(superMarket.components.searchBar());
+					var cells = superMarket.components.weuiCells({
+						id:"goodsShelves",
+						click:function(){
+							var data = $(this).data("data");
+							showMerchantGoods(data);	
+						}	
+					});
+					$("#container").append(cells);
+					$("#goodsShelves").on("click","div.weui-cell",function(){
+						_merchantGoods = $(this).data("data");
+						showMerchantGoods()	
+					});	
 					showShelves();
 				});	
 				$("#uploadGoods").click(function(){
 					showMerchantGoods();
 				});
+				$("#goodsShelves").click();	
 			});
 
 			function getWxConfig(){
@@ -111,145 +71,173 @@
 			}
 
 			function initPage(){
+				superMarket.util.initSession();	
 				merchantId = superMarket.util.getQueryVariable("merchantId");
 				if (merchantId != "") {
 					sessionStorage.setItem("merchantId",merchantId);
-				}	
+				}
+				_merchantGoods = new merchantGoods();
+				_merchantGoodses = new merchantGoodses();
+				_merchantGoodses.merchantId = merchantId;	
+				getWxConfig();
+				$("#container").scroll(function(){
+					var scrollTop = this.scrollTop;
+					var height = this.clientHeight;
+					var scrollHeight = this.scrollHeight;
+					if(scrollTop + height == scrollHeight){
+						if(_merchantGoodses.pageIndex * _merchantGoodses.pageSize < _merchantGoodses.totalCount){
+							_merchantGoodses.selectByMerchantId()
+						}
+					}	
+				});
 			}
 
 			function showShelves(){
-				$("#goodsShelves").addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
-				var content = $("#searchInput").val();	
-				var _merchantGoodses = new merchantGoodses();
-				var merchantId = sessionStorage.getItem("merchantId")	
-				_merchantGoodses.selectByMerchantId({
-						content:content,
-						merchantId:merchantId,
-						pageIndex:pageIndex,
-						pageSize:pageSize
-					},function(data){
-					var container = document.createElement("div");
+				_merchantGoodses.selectByMerchantId(
+					function(data){
+					var fragment = document.createDocumentFragment();
 					var length = data.values.length;	
 					for(var i =0;i<length;i++){
-						var div = superMarket.components.div({});	
-						var pGoods = superMarket.components.p({
-							text:data.values[i].goodsName
-						});
-						div.appendChild(pGoods);	
-						var pPriceAndDiscount = superMarket.components.p({
-							text:"价格:" + data.values[i].price + ",折扣:" + data.values[i].discount
-						});
-						$(pPriceAndDiscount).css("margin-left","20px");	
-						div.appendChild(pPriceAndDiscount);	
-						var item = superMarket.components.formItem({
-							body:div	
-						});
-						container.appendChild(item);	
+						var arr = [];
+						arr.push({ type:"p",text:data.values[i].goodsName });	
+						arr.push({ type:"p",text: "价格:" +  data.values[i].price + "元" });
+						var discount ;
+						if (data.values[i].discount != 1){
+							discount = data.values[i].discount * 10;	
+						}
+						arr.push({ type:"p",text: "折扣:" + discount + "折" });	
+						fragment.appendChild(superMarket.components.weuiCell({
+							body:arr,
+							data:data.values[i]	
+						}));
 					}
-					var btnOprArea = superMarket.components.div({
-						
-					});		
-					var btnPrev = superMarket.components.button({
-						className:"weui-btn weui-btn_primary",
-						text:"上一页",
-						click:function(){
-							if(pageIndex > 1) pageIndex = pageIndex -1;	
-							showShelves();	
-						}	
-					});
-					btnOprArea.appendChild(btnPrev);		
-					var btnNext = superMarket.components.button({
-						className:"weui-btn weui-btn_primary",
-						text:"下一页",
-						click:function(){
-							if(pageIndex * pageSize > data.totalCount) return;
-							pageIndex = pageIndex +1;
-							showShelves();	
-						}	
-					});
-					btnOprArea.appendChild(btnNext);		
-				    var oprArea = superMarket.components.formItem({
-						body:btnOprArea	
-					});
-					container.appendChild(oprArea);		
-					$("#container").html("");	
-					$("#container").append(container);
+					$("#goodsShelves").append(fragment);
 				},function(xmlhttp){
-					
-				})	
+					superMarket.util.showErrorMessage(xmlhttp.responseText);	
+				});	
 			}
 				
-			function showMerchantGoods(data){
-				$("#container").html($("#tpl_merchantGoods").html());
-				$("#goodsName").click(function(){
-					wx.scanQRCode({
-						needResult:1,
-						scanType:["barCode"],
-						success:function(res){
-							var result = res.resultStr;
-							result = result.split(",")[1];
-							queryGoods(result);	
-						}	
-					});
-				});
-				$("#btnUpload").click(function(){
-					var goodsId =  $("#goodsId").val();
-					if(goodsId == "") $("#message").text("商品名称不能为空，请先扫描商品");	
-					var price = $("#price").val();
-					if(!$.isNumeric(price)) $("#message").text("商品价格应该为数字");
-					var discount = $("#discount").val();
-					if(!$.isNumeric(discount)) $("#message").text("商品折扣应该为数字");
-					var _merchantGoods = new merchantGoods();
-					_merchantGoods.merchantGoodsId = $("#merchantGoodsId").val();	
-					_merchantGoods.goodsId = goodsId;
-					_merchantGoods.merchantId = sessionStorage.getItem("merchantId");
-					_merchantGoods.price = price;
-					_merchantGoods.discount = discount;
-					if(_merchantGoods.merchantGoodsId == "" || _merchantGoods.merchantGoodsId == "0"){
-						_merchantGoods.create(function(data){
-							$("#goodsId").val("");
-							$("#goodsName").val("");
-							$("#price").val("");
-							$("#discount").val("");	
-							$("#message").text("新增成功");	
-						},function(xmlhttp){
-							$("#message").text(xmlhttp.responseText);
-						});
-					}else{
-						_merchantGoods.update(function(data){
-							$("#goodsId").val("");
-							$("#goodsName").val("");
-							$("#price").val("");
-							$("#discount").val("");
-							$("#message").text("修改成功");	
-						},function(xmlhttp){
-							$("#message").text(xmlhttp.responseText);
-						});	
+			function showMerchantGoods(){
+				$("#uploadGoods").addClass("weui-bar__item_on").siblings().removeClass("weui-bar__item_on");	
+				var merchantGoodsForm = superMarket.components.weuiForm({
+					textArea:{title:"商品信息"},
+					controlArea:{
+						cells:[
+							{
+								head:{ type:"label",text:"商品名称",className:"weui-label" },	
+								body:{ type:"text",
+										id:"goodsName",	
+										value:_merchantGoods.goodsName,
+										className:"weui-input",
+										click:function(){
+											wx.scanQRCode({
+												needResult:1,
+												type:["barCode"],
+												success:function(res){
+													var result = res.resultStr;
+													result = result.split(",")[1];
+													queryGoods(result);	
+												}	
+											});
+										}
+								}
+							},
+							{
+								head:{ type:"label",text:"商品价格",className:"weui-label" },
+								body:{ type:"text",
+										id:"price",	
+										value:_merchantGoods.price,
+										className:"weui-input",
+										change:function(){
+											_merchantGoods.price = $(this).val();
+										}
+								}	
+							},
+							{
+								head:{ type:"label",text:"商品折扣",className:"weui-label"  },
+								body:{ type:"text",
+										id:"discount",
+										value:_merchantGoods.discount,
+										className:"weui-input",
+										change:function(){
+											_merchantGoods.discount = $(this).val();
+										}
+								}	
+							}	
+						]
+					},
+					oprArea:{
+						btns:[
+							{ text:"提交",
+								className:"weui-btn weui-btn_primary",
+								click:function(){
+									if(_merchantGoods.goodsId == "") {
+										superMarket.util.showErrorMessage("商品名称不能为空，请先扫描商品");
+										return	
+									}
+									if(!$.isNumeric(_merchantGoods.price)){
+										superMarket.util.showErrorMessage("商品价格应为数字");
+										return	
+									}	
+									if(!$.isNumeric(_merchantGoods.discount)){
+										superMarket.util.showErrorMessage("商品折扣应为数字");
+										return	
+									}	
+									if(_merchantGoods.merchantGoodsId == "" || _merchantGoods.merchantGoodsId == "0"){
+										_merchantGoods.create(function(data){
+											_merchantGoods = new merchantGoods();	
+											$("#goodsName").val("");
+											$("#price").val("");
+											$("#discount").val("");	
+											superMarket.util.showErrorMessage("新增成功");	
+											},function(xmlhttp){
+											superMarket.util.showErrorMessage(xmlhttp.responseText);
+										});
+									}else{
+										_merchantGoods.update(function(data){
+											superMarket.util.showErrorMessage("修改成功");	
+										},function(xmlhttp){
+											superMarket.util.showErrorMessage(xmlhttp.responseText);
+										});	
+									}	
+								}
+							}
+						]
 					}	
-				});	
+				});
+				$("#container").html("");
+				$("#container").append(merchantGoodsForm);	
 			}
 
 			function queryGoods(goodsBarCode){
-				var _goods = new goods();
-				_goods.selectByBarCode(goodsBarCode,function(data){
-					$("#goodsName").val(data.goodsName);
-					$("#goodsId").val(data.goodsId);	
-					queryMerchantGoods(data.goodsId);	
-				},function(data){
-					$("#message").text(data.responseText);
+				$.ajax({
+					url:"/goods/selectByBarCode",
+					type:"post",
+					contentType:"application/x-www-form-urlencoded",
+					dataType:"json",
+					beforeSend:function(xmlhttp){
+					    goSessionId = sessionStorage.getItem("goSessionId");
+				    xmlhttp.setRequestHeader("goSessionId",goSessionId);
+					},
+					data:{ barCode:goodsBarCode },
+					success:function(data){
+					   queryMerchantGoods(data.goodsId); 
+					},
+					error:function(xmlhttp){
+						superMarket.util.showErrorMessage(xmlhttp.responseText);
+					}
 				});
 			}
 
 			function queryMerchantGoods(goodsId) {
-				var _merchantGoods = new merchantGoods();
 				_merchantGoods.goodsId = goodsId;
 				_merchantGoods.merchantId = sessionStorage.getItem("merchantId");
 				_merchantGoods.selectByMerchantIdAndGoodsId(function(data){
-					$("#merchantGoodsId").val(data.merchantGoodsId);
+					$("#goodsName").val(data.goodsName);
 					$("#price").val(data.price);
 					$("#discount").val(data.discount);	
 				},function(xmlhttp){
-					$("#message").text(xmlhttp.responseText);
+					superMarket.util.showErrorMessage(xmlhttp.responseText);
 				});	
 			}
 				
